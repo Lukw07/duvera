@@ -8,7 +8,10 @@ nixPkgs = [
 ]
 
 [phases.build]
-cmds = ["echo 'No build step required for PHP'"]
+cmds = [
+  "echo 'No build step required for PHP'",
+  "chmod +x /assets/start.sh"
+]
 
 [start]
 cmd = '/assets/start.sh'
