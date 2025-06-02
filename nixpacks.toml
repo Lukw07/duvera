@@ -1,5 +1,15 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.mbstring", "php82Extensions.curl", "php82Extensions.openssl"]
+nixPkgs = [
+  "php82",
+  "php82Extensions.mbstring",
+  "php82Extensions.curl",
+  "php82Extensions.openssl",
+  "php82Extensions.session",
+  "nginx"
+]
 
 [phases.build]
-cmds = ["echo 'No build step required for PHP'"] 
+cmds = ["echo 'No build step required for PHP'"]
+
+[variables]
+NIXPACKS_PHP_ROOT_DIR = "/app" 
