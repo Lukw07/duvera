@@ -208,6 +208,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     animation: slideIn 0.5s ease-out;
   }
 
+  .error-message {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-top: 20px;
+    animation: slideIn 0.5s ease-out;
+  }
+
   @keyframes slideIn {
     from {
       opacity: 0;
