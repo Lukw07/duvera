@@ -1,22 +1,28 @@
+[variables]
+NIXPACKS_PHP_ROOT_DIR = "."
+NIXPACKS_PHP_FALLBACK_PATH = "/index.php"
+
 [phases.setup]
 nixPkgs = [
   "php82",
   "php82Extensions.mbstring",
   "php82Extensions.curl",
   "php82Extensions.openssl",
-  "php82Extensions.session"
+  "php82Extensions.session",
+  "composer"
 ]
 
 [phases.build]
 cmds = [
-  "echo 'No build step required for PHP'",
-  "chmod +x /assets/start.sh"
+  "composer install --no-dev --optimize-autoloader"
 ]
 
-[start]
-cmd = '/assets/start.sh'
+[phases.start]
+cmd = "php -S 0.0.0.0:8080 -t ."
 
 [staticAssets]
+"/" = "./public"
+
 "start.sh" = '''
 #!/bin/bash
 # Start PHP-FPM
@@ -102,7 +108,4 @@ pm.min_spare_servers = 4
 pm.max_spare_servers = 32
 pm.start_servers = 18
 clear_env = no
-'''
-
-[variables]
-NIXPACKS_PHP_ROOT_DIR = "/app" 
+''' 

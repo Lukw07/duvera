@@ -1,9 +1,22 @@
 <?php
 session_start();
 
-// Konfigurace emailu
-$admin_email = "vase@email.cz"; // Zde zadejte váš email
-$site_name = "Schránka Důvěry";
+// Load Composer autoloader
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Load configuration
+$config = require_once __DIR__ . '/config.php';
+
+// Import EmailService
+use App\EmailService;
+
+// Initialize EmailService
+try {
+    $emailService = new EmailService($config);
+} catch (Exception $e) {
+    error_log("Failed to initialize EmailService: " . $e->getMessage());
+    $_SESSION['error'] = true;
+}
 
 // Zpracování formuláře
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -16,8 +29,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Sanitize and Validate Email (optional)
-    // filter_input with FILTER_SANITIZE_EMAIL is still valid.
-    // We add an extra check to ensure it's a valid email format if provided.
     $email_input = isset($_POST['email']) ? trim($_POST['email']) : '';
     if ($email_input === '') {
         $email = 'Neudáno';
@@ -26,52 +37,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (filter_var($sanitized_email, FILTER_VALIDATE_EMAIL)) {
             $email = $sanitized_email;
         } else {
-            $email = 'Neudáno (neplatný formát)'; // Or just 'Neudáno'
+            $email = 'Neudáno (neplatný formát)';
         }
     }
 
     // Sanitize Message (required)
     $message_raw = isset($_POST['message']) ? trim($_POST['message']) : '';
-    // htmlspecialchars will prevent XSS and convert special characters to HTML entities.
     $message = htmlspecialchars($message_raw, ENT_QUOTES, 'UTF-8');
     
-    // Check if message is not empty after sanitization (as it's required)
-    if (!empty($message_raw)) { // Check raw message, as htmlspecialchars might make it non-empty with entities
-        // Příprava emailu
-        $subject = "Nová zpráva ze {$site_name}";
-        // IMPORTANT: Ensure $admin_email is a valid address you control.
-        // For the "From" header, noreply@vasedomena.cz should ideally be from a domain you control and have configured for sending.
-        $headers = "From: {$site_name} <noreply@vasedomena.cz>\r\n";
-        // If $email is 'Neudáno' or invalid, you might not want a Reply-To or handle it differently.
-        if ($email !== 'Neudáno' && $email !== 'Neudáno (neplatný formát)') {
-            $headers .= "Reply-To: {$email}\r\n";
-        }
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        
-        $email_content = "Jméno: {$name}\n";
-        $email_content .= "Email: {$email}\n"; // This will show the sanitized/validated email or 'Neudáno'
-        $email_content .= "Čas: " . date('d.m.Y H:i:s') . "\n\n";
-        $email_content .= "Zpráva:\n{$message}"; // This is the htmlspecialchars-treated message
-        
-        // Odeslání emailu
-        if (mail($admin_email, $subject, $email_content, $headers)) {
-            $_SESSION['success'] = true;
+    // Check if message is not empty after sanitization
+    if (!empty($message_raw)) {
+        // Send email using EmailService
+        if (isset($emailService)) {
+            try {
+                if ($emailService->sendMessage($name, $email, $message)) {
+                    $_SESSION['success'] = true;
+                } else {
+                    $_SESSION['error'] = true;
+                }
+            } catch (Exception $e) {
+                error_log("Email sending failed: " . $e->getMessage());
+                $_SESSION['error'] = true;
+            }
         } else {
             $_SESSION['error'] = true;
         }
         
         // Přesměrování pro prevenci opětovného odeslání
-        header("Location: " . htmlspecialchars($_SERVER['PHP_SELF'])); // Sanitize PHP_SELF here too
+        header("Location: " . htmlspecialchars($_SERVER['PHP_SELF']));
         exit();
     } else {
-        // If the required message is empty after trimming.
-        // You might want to set an error message or handle this case specifically,
-        // though the HTML 'required' attribute should prevent this in most browsers.
         $_SESSION['error_message_empty'] = "Zpráva nesmí být prázdná.";
-        // Redirect back to show the form, potentially with an error.
-        // header("Location: " . htmlspecialchars($_SERVER['PHP_SELF']));
-        // exit();
-        // For now, let it fall through, the form will re-display, and the main error/success messages won't show.
     }
 }
 ?>
@@ -81,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8'); ?></title>
+  <title><?php echo htmlspecialchars($config['site']['name'], ENT_QUOTES, 'UTF-8'); ?></title>
   <style>
   /* ... (your CSS remains the same) ... */
   * {
@@ -309,7 +305,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
   <div class="container">
     <div class="header">
-      <h1>💬 <?php echo htmlspecialchars($site_name, ENT_QUOTES, 'UTF-8'); ?></h1>
+      <h1>💬 <?php echo htmlspecialchars($config['site']['name'], ENT_QUOTES, 'UTF-8'); ?></h1>
       <p>Bezpečné místo pro sdílení vašich myšlenek, obav nebo zpovědi. Vaše zpráva bude zaslána anonymně.</p>
     </div>
 
@@ -324,7 +320,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (isset($_SESSION['error'])): ?>
     <div class="error-message">
       <h3>❌ Chyba při odesílání</h3>
-      <p>Omlouváme se, při odesílání zprávy došlo k chybě. Prosím zkuste to později.</p>
+      <p>Omlouváme se, při odesílání zprávy došlo k chybě. Prosím zkuste to později nebo kontaktujte administrátora.</p>
     </div>
     <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
@@ -365,8 +361,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <h3>Ochrana soukromí</h3>
       <p>• Vaše zpráva je odesílána bezpečně a anonymně</p>
       <p>• Nevyžadujeme žádné povinné osobní údaje</p>
-      <p>• IP adresy ani další technické informace neukládáme</p>
+      <p>• IP adresy jsou zaznamenávány pouze pro bezpečnostní účely</p>
       <p>• Všechny zprávy jsou zpracovávány s maximální diskrétností</p>
+      <p>• Komunikace probíhá přes šifrované SMTP spojení</p>
     </div>
   </div>
 
@@ -375,7 +372,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   const messageTextarea = document.getElementById('message');
   const charCount = document.getElementById('charCount');
 
-  if (messageTextarea) { // Check if element exists
+  if (messageTextarea) {
     messageTextarea.addEventListener('input', function() {
       const count = this.value.length;
       charCount.textContent = count;
@@ -390,30 +387,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     });
   }
 
-
-  // Animace při načítání stránky (optional, consider if needed after redirects)
-  // window.addEventListener('load', function() {
-  //   const container = document.querySelector('.container');
-  //   if (container) { // Check if element exists
-  //       container.style.animation = 'fadeIn 0.8s ease-out';
-  //   }
-  // });
-
-  // Auto-display success/error messages if they exist and are set to display:block
-  // This is handled by PHP inline style for success, and CSS for error.
-  // You might want to hide them after a few seconds if you prefer.
+  // Auto-hide success/error messages after 5 seconds
   const successMessage = document.getElementById('successMessage');
   if (successMessage && successMessage.style.display === 'block') {
     setTimeout(() => {
-      // successMessage.style.display = 'none'; // Or fade out
-    }, 5000); // Hide after 5 seconds, for example
+      successMessage.style.opacity = '0';
+      setTimeout(() => successMessage.style.display = 'none', 500);
+    }, 5000);
   }
-  const errorMessage = document.querySelector('.error-message'); // Using querySelector as ID might not be present
-  if (errorMessage && getComputedStyle(errorMessage).display !==
-    'none') { // Check if error message exists and is visible
+
+  const errorMessage = document.querySelector('.error-message');
+  if (errorMessage && getComputedStyle(errorMessage).display !== 'none') {
     setTimeout(() => {
-      // errorMessage.style.display = 'none'; // Or fade out
-    }, 5000); // Hide after 5 seconds
+      errorMessage.style.opacity = '0';
+      setTimeout(() => errorMessage.style.display = 'none', 500);
+    }, 5000);
   }
   </script>
 </body>
