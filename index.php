@@ -12,6 +12,11 @@ $config = require_once __DIR__ . '/config.php';
 // Import EmailService
 use App\EmailService;
 
+// Generate CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Initialize EmailService
 try {
     $emailService = new EmailService($config);
@@ -22,6 +27,13 @@ try {
 
 // Zpracování formuláře
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Check CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['error_message_empty'] = "Neplatný požadavek. Prosím zkuste to znovu.";
+        header("Location: " . htmlspecialchars($_SERVER['PHP_SELF']));
+        exit();
+    }
+
     // Sanitize Name (optional)
     $name_raw = isset($_POST['name']) ? trim($_POST['name']) : '';
     if ($name_raw === '') {
@@ -60,6 +72,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             try {
                 if ($emailService->sendMessage($name, $email, $message)) {
                     $_SESSION['success'] = true;
+                    // Generate new CSRF token after successful submission
+                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
                 } else {
                     $_SESSION['error'] = true;
                 }
@@ -340,23 +354,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <form id="trustForm" method="POST"
       action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"], ENT_QUOTES, 'UTF-8'); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+      
       <div class="form-group">
         <label for="name">Jméno <span class="optional">(volitelné)</span></label>
-        <input type="text" id="name" name="name" placeholder="Můžete zůstat anonymní">
+        <input type="text" id="name" name="name" placeholder="Můžete zůstat anonymní" maxlength="100">
       </div>
 
       <div class="form-group">
         <label for="email">Email <span class="optional">(volitelné - pro odpověď)</span></label>
-        <input type="email" id="email" name="email" placeholder="váš@email.cz">
+        <input type="email" id="email" name="email" placeholder="váš@email.cz" maxlength="100">
       </div>
 
       <div class="form-group">
         <label for="message">Vaše zpráva *</label>
         <textarea id="message" name="message"
           placeholder="Napište zde svou zprávu, myšlenku, obavu nebo cokoliv, co potřebujete sdílet..." required
-          maxlength="2000"></textarea>
+          maxlength="<?php echo $max_message_length; ?>" minlength="<?php echo $min_message_length; ?>"></textarea>
         <div class="character-count">
-          <span id="charCount">0</span>/2000 znaků
+          <span id="charCount">0</span>/<?php echo $max_message_length; ?> znaků
         </div>
       </div>
 
@@ -377,21 +393,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   // Počítadlo znaků
   const messageTextarea = document.getElementById('message');
   const charCount = document.getElementById('charCount');
+  const maxLength = <?php echo $max_message_length; ?>;
+  const minLength = <?php echo $min_message_length; ?>;
 
   if (messageTextarea) {
     messageTextarea.addEventListener('input', function() {
       const count = this.value.length;
       charCount.textContent = count;
 
-      if (count > 1800) {
+      if (count > maxLength * 0.9) {
         charCount.style.color = '#ff6b6b';
-      } else if (count > 1500) {
+      } else if (count > maxLength * 0.75) {
         charCount.style.color = '#ffa726';
       } else {
         charCount.style.color = '#888';
       }
     });
   }
+
+  // Form validation
+  document.getElementById('trustForm').addEventListener('submit', function(e) {
+    const message = messageTextarea.value.trim();
+    if (message.length < minLength) {
+      e.preventDefault();
+      alert('Zpráva musí mít alespoň ' + minLength + ' znaků.');
+    }
+  });
 
   // Auto-hide success/error messages after 5 seconds
   const successMessage = document.getElementById('successMessage');

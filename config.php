@@ -2,16 +2,16 @@
 // SMTP Configuration for Forpsi
 return [
     'smtp' => [
-        'host' => 'smtp.forpsi.com',
-        'port' => 587, // TLS port (recommended by Forpsi)
+        'host' => 'smtp.seznam.cz',
+        'port' => 465, // TLS port (recommended by Forpsi)
         'encryption' => 'tls', // or 'ssl' for port 465
-        'username' => 'kry.pepa@gmailcom', // Your full email address
-        'password' => '123456789k.K', // You need to set your email password here
-        'from_email' => 'kry.pepa@gmailcom',
+        'username' => 'test@webforte.cz', // Your full email address
+        'password' => 'nL6!MxpU4AOpRZ', // You need to set your email password here
+        'from_email' => 'test@webforte.cz',
         'from_name' => 'Schránka Důvěry - ZŠ Kamenická',
     ],
     'admin' => [
-        'email' => 'kry.pepa@gmailcom', // Change this to your admin email
+        'email' => 'test@webforte.cz', // Change this to your admin email
         'name' => 'Administrátor'
     ],
     'site' => [
