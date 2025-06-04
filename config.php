@@ -5,13 +5,13 @@ return [
         'host' => 'smtp.forpsi.com',
         'port' => 587, // TLS port (recommended by Forpsi)
         'encryption' => 'tls', // or 'ssl' for port 465
-        'username' => 'noreply@zskamenicka.cz', // Your full email address
-        'password' => '', // You need to set your email password here
-        'from_email' => 'noreply@zskamenicka.cz',
+        'username' => 'kry.pepa@gmailcom', // Your full email address
+        'password' => '123456789k.K', // You need to set your email password here
+        'from_email' => 'kry.pepa@gmailcom',
         'from_name' => 'Schránka Důvěry - ZŠ Kamenická',
     ],
     'admin' => [
-        'email' => 'kry.tuma@gmail.com', // Change this to your admin email
+        'email' => 'kry.pepa@gmailcom', // Change this to your admin email
         'name' => 'Administrátor'
     ],
     'site' => [
