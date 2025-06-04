@@ -4,7 +4,7 @@ return [
     'smtp' => [
         'host' => 'smtp.seznam.cz',
         'port' => 465, // TLS port (recommended by Forpsi)
-        'encryption' => 'tls', // or 'ssl' for port 465
+        'encryption' => 'ssl', // or 'ssl' for port 465
         'username' => 'test@webforte.cz', // Your full email address
         'password' => 'nL6!MxpU4AOpRZ', // You need to set your email password here
         'from_email' => 'test@webforte.cz',
