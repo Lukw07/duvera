@@ -1,27 +1,53 @@
-# Use a base image with Nginx and PHP-FPM
-# The 'latest' tag is convenient. For production, you might consider pinning to a specific version tag
-# for example, richarvey/nginx-php-fpm:php82 or another PHP 8.x version.
-FROM richarvey/nginx-php-fpm:latest
+# Use official PHP 8.2 with Apache
+FROM php:8.2-apache
 
-# Set the working directory in the container.
-# /var/www/html is the typical web root for this base image.
+# Install system dependencies and PHP extensions
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    libzip-dev \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-enable mbstring \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy your single PHP file (assumed to be named index.php)
-# from your build context (the directory containing the Dockerfile)
-# into the web root directory inside the container.
-COPY index.php /var/www/html/index.php
+# Copy composer files first for better caching
+COPY composer.json composer.lock* ./
 
-# The base image (richarvey/nginx-php-fpm) already takes care of:
-# - Setting up Nginx and PHP-FPM to work together.
-# - Default Nginx configuration to serve PHP files from /var/www/html (index.php is usually the default).
-# - Common PHP extensions like 'session' are typically enabled.
-# - A 'sendmail' compatible utility (often ssmtp or similar) is usually included and configured
-#   to allow PHP's mail() function to work. Actual mail delivery will depend on the
-#   environment's (e.g., Coolify server's) ability to send mail or relay it.
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Expose port 80, which is the standard HTTP port Nginx will listen on.
+# Copy application files
+COPY . .
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+# Enable Apache mod_rewrite (if needed for URL rewriting)
+RUN a2enmod rewrite
+
+# Configure Apache to serve from /var/www/html
+RUN echo '<Directory /var/www/html>\n\
+    Options Indexes FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
+</Directory>' > /etc/apache2/conf-available/app.conf \
+    && a2enconf app
+
+# Expose port 80
 EXPOSE 80
 
-# The base image's default command will start Nginx and PHP-FPM.
-# No need to override CMD or ENTRYPOINT for this simple case.
+# Start Apache in foreground
+CMD ["apache2-foreground"]
