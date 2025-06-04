@@ -53,12 +53,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $email_content .= "Zpráva:\n{$message}";
         
         // Odeslání emailu
-        if (mail($admin_email, $subject, $email_content, $headers)) {
+        $mail_sent = @mail($admin_email, $subject, $email_content, $headers);
+        if ($mail_sent) {
             $_SESSION['success'] = true;
             // Vygenerování nového CSRF tokenu po úspěšném odeslání
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         } else {
-            $_SESSION['error'] = "Nepodařilo se odeslat zprávu. Prosím zkuste to později.";
+            $error = error_get_last();
+            $error_message = "Nepodařilo se odeslat zprávu. ";
+            
+            if ($error !== null) {
+                switch ($error['type']) {
+                    case E_WARNING:
+                        $error_message .= "Chyba SMTP serveru: " . $error['message'];
+                        break;
+                    case E_ERROR:
+                        $error_message .= "Kritická chyba: " . $error['message'];
+                        break;
+                    default:
+                        $error_message .= "Technická chyba: " . $error['message'];
+                }
+            } else {
+                $error_message .= "Zkontrolujte prosím nastavení SMTP serveru a zkuste to znovu.";
+            }
+            
+            $_SESSION['error'] = $error_message;
         }
     }
     
