@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+$max_message_length = 2000;
+$min_message_length = 10;
 // Load Composer autoloader
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -45,8 +47,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $message_raw = isset($_POST['message']) ? trim($_POST['message']) : '';
     $message = htmlspecialchars($message_raw, ENT_QUOTES, 'UTF-8');
     
-    // Check if message is not empty after sanitization
-    if (!empty($message_raw)) {
+    // Validace zprávy
+    if (empty($message_raw)) {
+        $_SESSION['error_message_empty'] = "Zpráva nesmí být prázdná.";
+    } elseif (strlen($message_raw) < $min_message_length) {
+        $_SESSION['error_message_empty'] = "Zpráva musí mít alespoň {$min_message_length} znaků.";
+    } elseif (strlen($message_raw) > $max_message_length) {
+        $_SESSION['error_message_empty'] = "Zpráva nesmí být delší než {$max_message_length} znaků.";
+    } else {
         // Send email using EmailService
         if (isset($emailService)) {
             try {
@@ -66,8 +74,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Přesměrování pro prevenci opětovného odeslání
         header("Location: " . htmlspecialchars($_SERVER['PHP_SELF']));
         exit();
-    } else {
-        $_SESSION['error_message_empty'] = "Zpráva nesmí být prázdná.";
     }
 }
 ?>
