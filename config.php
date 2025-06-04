@@ -11,11 +11,11 @@ return [
         'from_name' => 'Schránka Důvěry - ZŠ Kamenická',
     ],
     'admin' => [
-        'email' => 'admin@zskamenicka.cz', // Change this to your admin email
+        'email' => 'kry.tuma@gmail.com', // Change this to your admin email
         'name' => 'Administrátor'
     ],
     'site' => [
         'name' => 'Schránka Důvěry - ZŠ Kamenická',
-        'url' => 'https://schranka.zskamenicka.cz' // Update with your actual domain
+        'url' => 'https://duvera.zskamenicka.cz' // Update with your actual domain
     ]
 ]; 
