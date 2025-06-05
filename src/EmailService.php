@@ -69,20 +69,16 @@ class EmailService
             }
             
             // Content
-            $this->mail->isHTML(false); // Plain text email
+            $this->mail->isHTML(true); // HTML email for better formatting
             $this->mail->Subject = "Nová zpráva ze " . $this->config['site']['name'];
             
-            $emailContent = "Nová zpráva byla odeslána prostřednictvím Schránky Důvěry\n\n";
-            $emailContent .= "Jméno: " . $name . "\n";
-            $emailContent .= "Email: " . $email . "\n";
-            $emailContent .= "Čas: " . date('d.m.Y H:i:s') . "\n";
-            $emailContent .= "IP adresa: " . $this->getClientIP() . "\n\n";
-            $emailContent .= "Zpráva:\n" . str_repeat('-', 50) . "\n";
-            $emailContent .= $message . "\n";
-            $emailContent .= str_repeat('-', 50) . "\n\n";
-            $emailContent .= "Tato zpráva byla odeslána z: " . $this->config['site']['url'] . "\n";
+            // HTML email template
+            $htmlContent = $this->generateHtmlTemplate($name, $email, $message);
+            $this->mail->Body = $htmlContent;
             
-            $this->mail->Body = $emailContent;
+            // Plain text alternative
+            $plainContent = $this->generatePlainTemplate($name, $email, $message);
+            $this->mail->AltBody = $plainContent;
             
             // Send email
             $result = $this->mail->send();
@@ -101,23 +97,140 @@ class EmailService
         }
     }
     
-    private function getClientIP()
+    private function generateHtmlTemplate($name, $email, $message)
     {
-        // Get client IP address (considering proxies)
-        $ipKeys = ['HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];
-        
-        foreach ($ipKeys as $key) {
-            if (array_key_exists($key, $_SERVER) === true) {
-                foreach (explode(',', $_SERVER[$key]) as $ip) {
-                    $ip = trim($ip);
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
-                        return $ip;
-                    }
+        return '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Nová zpráva</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f5f5f5;
                 }
-            }
-        }
+                .email-container {
+                    background-color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    overflow: hidden;
+                }
+                .header {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 30px 20px;
+                    text-align: center;
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 24px;
+                    font-weight: 300;
+                }
+                .content {
+                    padding: 30px;
+                }
+                .info-row {
+                    display: flex;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 10px;
+                }
+                .info-label {
+                    font-weight: bold;
+                    color: #555;
+                    width: 80px;
+                    flex-shrink: 0;
+                }
+                .info-value {
+                    color: #333;
+                    flex: 1;
+                }
+                .message-section {
+                    margin-top: 30px;
+                }
+                .message-label {
+                    font-weight: bold;
+                    color: #555;
+                    margin-bottom: 10px;
+                    display: block;
+                }
+                .message-content {
+                    background-color: #f8f9fa;
+                    border-left: 4px solid #667eea;
+                    padding: 20px;
+                    border-radius: 4px;
+                    white-space: pre-wrap;
+                    font-family: inherit;
+                }
+                .footer {
+                    background-color: #f8f9fa;
+                    padding: 20px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 14px;
+                }
+                .footer a {
+                    color: #667eea;
+                    text-decoration: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="header">
+                    <h1>📬 Nová zpráva</h1>
+                    <p>ze Schránky Důvěry</p>
+                </div>
+                
+                <div class="content">
+                    <div class="info-row">
+                        <span class="info-label">Jméno:</span>
+                        <span class="info-value">' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Čas:</span>
+                        <span class="info-value">' . date('d.m.Y H:i:s') . '</span>
+                    </div>
+                    
+                    <div class="message-section">
+                        <span class="message-label">Zpráva:</span>
+                        <div class="message-content">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</div>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p>Tato zpráva byla odeslána z: <a href="' . htmlspecialchars($this->config['site']['url'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($this->config['site']['name'], ENT_QUOTES, 'UTF-8') . '</a></p>
+                </div>
+            </div>
+        </body>
+        </html>';
+    }
+    
+    private function generatePlainTemplate($name, $email, $message)
+    {
+        $emailContent = "Nová zpráva byla odeslána prostřednictvím Schránky Důvěry\n\n";
+        $emailContent .= "Jméno: " . $name . "\n";
+        $emailContent .= "Email: " . $email . "\n";
+        $emailContent .= "Čas: " . date('d.m.Y H:i:s') . "\n\n";
+        $emailContent .= "Zpráva:\n" . str_repeat('-', 50) . "\n";
+        $emailContent .= $message . "\n";
+        $emailContent .= str_repeat('-', 50) . "\n\n";
+        $emailContent .= "Tato zpráva byla odeslána z: " . $this->config['site']['url'] . "\n";
         
-        return $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+        return $emailContent;
     }
     
     public function testConnection()
@@ -131,4 +244,4 @@ class EmailService
             return false;
         }
     }
-} 
+}
