@@ -3,8 +3,8 @@
 return [
     'smtp' => [
         'host' => 'smtp.gmail.com',
-        'port' => 465, // TLS port (recommended by Forpsi)
-        'encryption' => 'ssl', // or 'ssl' for port 465
+        'port' => 587, // TLS port (recommended by Forpsi)
+        'encryption' => 'tls', // or 'ssl' for port 465
         'username' => 'kry.pepa@gmail.com', // Your full email address
         'password' => '123456789k.K', // You need to set your email password here
         'from_email' => 'kry.pepa@gmail.com',
