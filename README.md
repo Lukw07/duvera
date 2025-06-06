@@ -5,21 +5,10 @@ Bezpečná aplikace pro anonymní zasílání zpráv s podporou SMTP emailů př
 ## Funkce
 
 - 📝 Anonymní odesílání zpráv
-- 📧 SMTP email notifikace přes Forpsi
+- 📧 SMTP email notifikace
 - 🔒 Bezpečné šifrované spojení
 - 🎨 Moderní responzivní design
 - 🇨🇿 Česká lokalizace
-
-## SMTP Konfigurace pro Forpsi
-
-### 1. Nastavení emailového účtu
-
-Před nasazením aplikace je potřeba:
-
-1. **Vytvořit emailový účet** `noreply@zskamenicka.cz` na Forpsi
-2. **Nastavit heslo** pro tento účet
-3. **Ověřit funkčnost** účtu přes webmail
-
 ### 2. Konfigurace aplikace
 
 Upravte soubor `config.php`:
@@ -40,9 +29,9 @@ Upravte soubor `config.php`:
 ]
 ```
 
-### 3. Forpsi SMTP nastavení
+### 3. SMTP nastavení
 
-- **SMTP server:** `smtp.forpsi.com`
+- **SMTP server:** `smtp.?.com`
 - **Port:** `587` (TLS) nebo `465` (SSL)
 - **Šifrování:** TLS nebo SSL (povinné)
 - **Autentifikace:** Povinná (LOGIN/PLAIN)
@@ -51,18 +40,12 @@ Upravte soubor `config.php`:
 
 ### 4. Testování SMTP
 
-Po nasazení navštivte: `https://your-domain.com/smtp-test.php`
-
-⚠️ **Bezpečnost:** Smažte `smtp-test.php` po otestování!
-
-## Nasazení na Coolify
-
 ### Požadavky
 
 - PHP 8.2+
 - Composer
 - PHPMailer
-- Funkční emailový účet na Forpsi
+- Funkční emailový účet
 
 ### Kroky nasazení
 
@@ -125,25 +108,10 @@ duvera/
 2. **Connection refused**
 
    - Zkontrolujte port (587 pro TLS, 465 pro SSL)
-   - Ověřte, že Forpsi neblokuje připojení
+   - Ověřte, že stmp neblokuje připojení
 
 3. **Sender rejected**
-   - Doména musí být hostována na Forpsi
    - Odesílatel musí odpovídat autentifikačnímu účtu
-
-### Forpsi specifické limity
-
-- **250 zpráv/minuta**
-- **1000 zpráv/hodina**
-- **20000 zpráv/den**
-- **250 příjemců na zprávu**
-
-## Podpora
-
-Pro technickou podporu kontaktujte:
-
-- Forpsi support: https://support.forpsi.com
-- Dokumentace SMTP: https://support.forpsi.com/kb/a3156/
 
 ## Licence
 
