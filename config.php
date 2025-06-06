@@ -6,7 +6,7 @@ return [
         'port' => 587, // TLS port (recommended by Forpsi)
         'encryption' => 'tls', // or 'ssl' for port 465
         'username' => 'kry.pepa@gmail.com', // Your full email address
-        'password' => '123456789k.K', // You need to set your email password here
+        'password' => 'uysm ogqr keke pecw', // You need to set your email password here
         'from_email' => 'kry.pepa@gmail.com',
         'from_name' => 'Schránka Důvěry - ZŠ Kamenická',
     ],
