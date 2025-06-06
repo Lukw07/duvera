@@ -1,6 +1,6 @@
 # Schránka Důvěry - Anonymous Messaging System
 
-Bezpečná aplikace pro anonymní zasílání zpráv s podporou SMTP emailů přes Forpsi.
+Bezpečná aplikace pro anonymní zasílání zpráv s podporou SMTP emailů
 
 ## Funkce
 
